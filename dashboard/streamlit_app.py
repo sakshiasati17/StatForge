@@ -16,6 +16,7 @@ from src.sequential_testing import SequentialTester
 from src.srm_detection import SRMDetector
 from src.multiple_testing import MultipleTestingCorrection
 from src.data import ExperimentDataGenerator
+from src.novelty_detection import NoveltyDetector
 
 st.set_page_config(
     page_title="StatForge — A/B Testing Platform",
@@ -50,12 +51,13 @@ st.markdown("""
 st.title("StatForge — A/B Testing & Experimentation Platform")
 st.caption("Statistical experimentation engine with power analysis, CUPED, sequential testing, and SRM detection")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Power Analysis",
     "Statistical Tests",
     "CUPED Variance Reduction",
     "Sequential Testing",
     "SRM + Multiple Testing",
+    "Novelty Effect",
 ])
 
 # ── Tab 1: Power Analysis ──────────────────────────────────────────────────────
@@ -214,8 +216,8 @@ with tab3:
     st.header("CUPED — Variance Reduction Using Pre-Experiment Covariate")
     st.info(
         "CUPED removes covariate signal from the post-experiment metric, reducing variance "
-        "by 30-50%. This means you detect the same effect size with fewer users — or reach "
-        "significance faster in a running experiment."
+        "by 30–50%. This means you detect the same effect size with fewer users — or reach "
+        "significance faster. Formula: **Y_adj = Y − θ(X − E[X])** where θ = Cov(Y,X)/Var(X)."
     )
 
     col1, col2 = st.columns([1, 2])
@@ -244,42 +246,94 @@ with tab3:
     with col2:
         summary = result.summary()
         c1, c2, c3 = st.columns(3)
-        c1.metric("θ (theta)", f"{summary['theta']:.4f}")
-        c2.metric("Variance reduction", f"{summary['variance_reduction_pct']:.1f}%")
+        c1.metric("θ (theta)", f"{summary['theta']:.4f}",
+                  help="Regression coefficient: how much pre-revenue predicts post-revenue")
+        c2.metric("Variance reduction", f"{summary['variance_reduction_pct']:.1f}%",
+                  help="ρ² × 100 — at ρ=0.6 expect ~36%")
         c3.metric("Sample size reduction", f"{summary['sample_size_reduction_pct']:.1f}%",
-                  help="Same % as variance reduction since n ∝ σ²")
+                  help="Because n ∝ σ², same % as variance reduction")
 
-        # Before vs after variance
-        fig = make_subplots(rows=1, cols=2, subplot_titles=("Original Revenue", "CUPED-Adjusted Revenue"))
-        for col_idx, (data, name) in enumerate([
-            (np.concatenate([result.original_control, result.original_treatment]), "Original"),
-            (np.concatenate([result.adjusted_control, result.adjusted_treatment]), "Adjusted"),
-        ], start=1):
-            fig.add_trace(go.Histogram(
-                x=data, name=name, nbinsx=60,
-                marker_color="#636EFA" if col_idx == 1 else "#00CC96",
-                opacity=0.75,
-            ), row=1, col=col_idx)
-        fig.update_layout(template="plotly_dark", height=320, showlegend=False,
-                          title_text="Revenue Distribution: Before vs After CUPED")
-        st.plotly_chart(fig, use_container_width=True)
+        # Density plot: original vs CUPED-adjusted
+        try:
+            import plotly.figure_factory as ff
+            pooled_orig = np.concatenate([result.original_control, result.original_treatment])
+            pooled_adj = np.concatenate([result.adjusted_control, result.adjusted_treatment])
+            # Clip extreme tails for readability
+            p1, p99 = np.percentile(pooled_orig, [1, 99])
+            orig_clipped = pooled_orig[(pooled_orig >= p1) & (pooled_orig <= p99)]
+            adj_clipped = pooled_adj[(pooled_adj >= p1) & (pooled_adj <= p99)]
+            fig_density = ff.create_distplot(
+                [orig_clipped.tolist(), adj_clipped.tolist()],
+                ["Original", "CUPED Adjusted"],
+                show_hist=False, show_rug=False,
+                colors=["#636EFA", "#00CC96"],
+            )
+            fig_density.update_layout(
+                title="Variance Narrowing: Original vs CUPED-Adjusted Distribution",
+                xaxis_title="Revenue ($)", yaxis_title="Density",
+                template="plotly_dark", height=280,
+            )
+            st.plotly_chart(fig_density, use_container_width=True)
+        except Exception:
+            # Fallback to histogram overlay if figure_factory fails
+            fig_density = go.Figure()
+            pooled_orig = np.concatenate([result.original_control, result.original_treatment])
+            pooled_adj = np.concatenate([result.adjusted_control, result.adjusted_treatment])
+            fig_density.add_trace(go.Histogram(x=pooled_orig, name="Original", opacity=0.6,
+                                               nbinsx=80, marker_color="#636EFA"))
+            fig_density.add_trace(go.Histogram(x=pooled_adj, name="CUPED Adjusted", opacity=0.6,
+                                               nbinsx=80, marker_color="#00CC96"))
+            fig_density.update_layout(barmode="overlay", template="plotly_dark", height=280,
+                                      title="Variance Narrowing: Original vs CUPED-Adjusted")
+            st.plotly_chart(fig_density, use_container_width=True)
 
-        # Covariate correlation scatter
-        sample_idx = np.random.choice(len(ctrl), min(500, len(ctrl)), replace=False)
-        fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(
-            x=ctrl.pre_revenue.values[sample_idx],
-            y=ctrl.revenue.values[sample_idx],
-            mode="markers", marker=dict(color="#636EFA", opacity=0.5, size=4),
-            name="Control",
+        # Scatter: pre vs post with θ line
+        rng_scatter = np.random.default_rng(0)
+        idx = rng_scatter.choice(len(ctrl), min(400, len(ctrl)), replace=False)
+        x_scatter = ctrl.pre_revenue.values[idx]
+        y_scatter = ctrl.revenue.values[idx]
+        x_line = np.linspace(x_scatter.min(), x_scatter.max(), 100)
+        y_line = result.theta * (x_line - float(np.mean(ctrl.pre_revenue.values))) + float(np.mean(ctrl.revenue.values))
+
+        fig_scatter = go.Figure()
+        fig_scatter.add_trace(go.Scatter(
+            x=x_scatter, y=y_scatter, mode="markers",
+            marker=dict(color="#636EFA", opacity=0.35, size=4), name="Users",
         ))
-        fig2.update_layout(
-            title=f"Pre-Revenue vs Post-Revenue (ρ ≈ {corr:.2f})",
-            xaxis_title="Pre-experiment revenue ($)",
-            yaxis_title="Post-experiment revenue ($)",
-            template="plotly_dark", height=280,
+        fig_scatter.add_trace(go.Scatter(
+            x=x_line, y=y_line, mode="lines",
+            line=dict(color="#EF553B", width=2), name=f"θ={result.theta:.3f}",
+        ))
+        fig_scatter.update_layout(
+            title=f"Pre vs Post Revenue — Regression Slope (θ={result.theta:.3f})",
+            xaxis_title="Pre-experiment revenue ($)", yaxis_title="Post-experiment revenue ($)",
+            template="plotly_dark", height=260,
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig_scatter, use_container_width=True)
+
+    # Sample size vs correlation interactive chart
+    st.subheader("Sample Size Reduction vs Pre/Post Correlation")
+    st.caption("Drag the ρ slider above — the curve shows how sample size shrinks as covariate correlation increases.")
+    correlations = np.linspace(0.0, 0.95, 200)
+    # Sample size scales with (1 - ρ²) relative to ρ=0 baseline
+    baseline_n = 5000
+    sample_sizes = [int(baseline_n * (1 - r ** 2)) for r in correlations]
+    fig_ss = go.Figure()
+    fig_ss.add_trace(go.Scatter(
+        x=correlations, y=sample_sizes,
+        mode="lines", line=dict(color="#AB63FA", width=2.5),
+        fill="tozeroy", fillcolor="rgba(171,99,250,0.12)",
+    ))
+    fig_ss.add_vline(x=corr, line_dash="dash", line_color="#EF553B",
+                     annotation_text=f"Current ρ={corr:.2f} → n={int(baseline_n*(1-corr**2)):,}",
+                     annotation_position="top right")
+    fig_ss.update_layout(
+        title="Required Sample Size vs Covariate Correlation (baseline n=5,000)",
+        xaxis_title="Correlation ρ (pre/post metric)",
+        yaxis_title="Required sample size per variant",
+        template="plotly_dark", height=280,
+    )
+    st.plotly_chart(fig_ss, use_container_width=True)
 
 
 # ── Tab 4: Sequential Testing ──────────────────────────────────────────────────
@@ -467,3 +521,99 @@ with tab5:
         c1.metric("Uncorrected rejections", sum(p < mt_alpha for p in raw_p_values))
         c2.metric("Bonferroni rejections", bonf_result.n_rejected)
         c3.metric("B-H rejections", bh_result.n_rejected)
+
+
+# ── Tab 6: Novelty Effect ──────────────────────────────────────────────────────
+with tab6:
+    st.header("Novelty Effect Detection")
+    st.info(
+        "Users often react to novelty rather than genuine value. A new button color shows "
+        "+20% clicks on day 1, +5% on day 7, +2% on day 14 — that's novelty, not improvement. "
+        "Detection: fit a linear trend to daily lift values. Significant negative slope = flag."
+    )
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        n_days = st.slider("Experiment duration (days)", 7, 30, 21)
+        n_per_day = st.slider("Users per day per variant", 100, 2000, 300, 100)
+        initial_lift = st.slider("Initial lift (day 1)", 0.02, 0.40, 0.20, 0.01)
+        decay_rate = st.slider("Daily decay rate", 0.0, 0.03, 0.015, 0.001,
+                               help="0 = stable effect, >0 = novelty decay")
+        novelty_alpha = st.slider("α for trend test", 0.01, 0.10, 0.05, 0.01, key="nov_alpha")
+
+        detector = NoveltyDetector(alpha=novelty_alpha)
+        daily_ctrl, daily_trt = detector.simulate_novelty_data(
+            n_days=n_days,
+            n_per_day=n_per_day,
+            initial_lift=initial_lift,
+            decay_rate=decay_rate,
+        )
+        nov_result = detector.detect(daily_ctrl, daily_trt, alpha=novelty_alpha)
+
+    with col2:
+        if nov_result.novelty_detected:
+            st.markdown(
+                f'<div class="srm-alert">⚠️ {nov_result.recommendation}</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<div class="srm-ok">✅ {nov_result.recommendation}</div>',
+                unsafe_allow_html=True,
+            )
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Trend slope", f"{nov_result.slope:.4f}",
+                  delta="declining" if nov_result.slope < 0 else "stable",
+                  delta_color="inverse" if nov_result.slope < 0 else "normal")
+        c2.metric("Trend p-value", f"{nov_result.p_value:.4f}")
+        c3.metric("R²", f"{nov_result.r_squared:.3f}",
+                  help="How much of daily lift variance is explained by the linear trend")
+
+        # Daily lift + trend line
+        days_list = nov_result.days
+        lifts = nov_result.daily_lifts
+        trend = [nov_result.slope * i + nov_result.intercept for i in range(len(days_list))]
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=days_list, y=[l * 100 for l in lifts],
+            mode="lines+markers", name="Daily lift (%)",
+            line=dict(color="#636EFA", width=2),
+            marker=dict(size=7),
+        ))
+        fig.add_trace(go.Scatter(
+            x=days_list, y=[t * 100 for t in trend],
+            mode="lines", name="Linear trend",
+            line=dict(color="#EF553B", width=2, dash="dash"),
+        ))
+        fig.add_hline(y=0, line_color="gray", line_dash="dot")
+        fig.update_layout(
+            title="Daily Treatment Lift Over Time",
+            xaxis_title="Day", yaxis_title="Treatment lift (%)",
+            template="plotly_dark", height=320,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Novelty vs stable comparison
+        st.subheader("Novelty vs Stable Effect — Side by Side")
+        fig2 = make_subplots(rows=1, cols=2,
+                             subplot_titles=("High decay (novelty)", "No decay (stable)"))
+        for col_idx, dr in enumerate([0.018, 0.0], start=1):
+            dc, dt = detector.simulate_novelty_data(n_days=n_days, n_per_day=n_per_day,
+                                                     initial_lift=initial_lift, decay_rate=dr)
+            nr = detector.detect(dc, dt)
+            fig2.add_trace(go.Scatter(
+                x=nr.days, y=[l * 100 for l in nr.daily_lifts],
+                mode="lines+markers",
+                line=dict(color="#636EFA" if col_idx == 1 else "#00CC96", width=2),
+                showlegend=False,
+            ), row=1, col=col_idx)
+            trend2 = [nr.slope * i + nr.intercept for i in range(len(nr.days))]
+            fig2.add_trace(go.Scatter(
+                x=nr.days, y=[t * 100 for t in trend2],
+                mode="lines", line=dict(color="#EF553B", dash="dash", width=1.5),
+                name="Trend", showlegend=col_idx == 1,
+            ), row=1, col=col_idx)
+        fig2.update_layout(template="plotly_dark", height=280)
+        st.plotly_chart(fig2, use_container_width=True)
