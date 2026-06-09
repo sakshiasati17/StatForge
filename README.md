@@ -221,8 +221,4 @@ Statistical logic — CUPED, sequential testing, SRM detection, and novelty dete
 
 **Novelty effect** — users react to newness, not value. Manifests as a declining treatment lift over time. Linear trend test on daily lift values; significant negative slope triggers a flag and recommendation to extend the experiment. This is a SUTVA (Stable Unit Treatment Value Assumption) violation.
 
----
 
-## Resume Bullet
-
-> Built StatForge, an A/B testing and experimentation platform with CUPED variance reduction (24.74% reduction in required sample size validated on Criteo's 13.9M row uplift dataset), sequential testing with O'Brien-Fleming alpha-spending for safe early stopping, novelty effect detection (linear trend on daily lift to flag SUTVA violations), and SRM detection; built dual dashboards in Streamlit and Tableau for technical and business stakeholders.
