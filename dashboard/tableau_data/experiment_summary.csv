@@ -1,0 +1,13 @@
+experiment_id,experiment_name,n_control,n_treatment,conversion_control,conversion_treatment,conversion_lift_abs,conversion_lift_pct,revenue_control_mean,revenue_treatment_mean,revenue_p_value,conversion_p_value,revenue_ci_lower,revenue_ci_upper,significant_conversion,significant_revenue,srm_detected,variance_reduction_pct,has_true_effect
+EXP-001,Experiment 1,2714,2714,0.0932,0.1444,0.0512,54.94,6.22,10.47,0.0,0.0,2.42,6.07,True,True,False,0.2,True
+EXP-002,Experiment 2,2687,2687,0.0997,0.1061,0.0063,6.34,6.38,7.48,0.2035,0.4453,-0.59,2.78,False,False,False,0.6,False
+EXP-003,Experiment 3,6211,6211,0.0953,0.1407,0.0454,47.64,6.71,10.16,0.0,0.0,2.23,4.68,True,True,False,0.5,True
+EXP-004,Experiment 4,6105,6105,0.0991,0.1178,0.0187,18.84,6.78,7.79,0.0857,0.0009,-0.14,2.17,True,False,False,0.6,True
+EXP-005,Experiment 5,3460,3460,0.0945,0.1514,0.0569,60.24,6.16,11.35,0.0,0.0,3.45,6.94,True,True,False,2.3,True
+EXP-006,Experiment 6,6363,6363,0.0973,0.0989,0.0016,1.62,7.05,6.9,0.781,0.7657,-1.25,0.94,False,False,False,0.5,False
+EXP-007,Experiment 7,2737,2737,0.0994,0.103,0.0037,3.68,7.14,7.76,0.4828,0.6541,-1.11,2.34,False,False,False,0.3,False
+EXP-008,Experiment 8,8866,8866,0.1031,0.1413,0.0382,37.09,7.18,10.31,0.0,0.0,2.09,4.19,True,True,False,0.7,True
+EXP-009,Experiment 9,7604,7604,0.0942,0.1507,0.0565,60.06,7.0,10.55,0.0,0.0,2.4,4.68,True,True,False,1.1,True
+EXP-010,Experiment 10,7423,7423,0.0982,0.1001,0.0019,1.92,6.8,7.15,0.5087,0.7006,-0.68,1.36,False,False,False,0.4,False
+EXP-011,Experiment 11,4911,4911,0.1026,0.0965,-0.0061,-5.95,7.06,6.57,0.4502,0.312,-1.75,0.78,False,False,False,0.9,False
+EXP-012,Experiment 12,6372,6372,0.0993,0.1441,0.0447,45.02,7.29,10.72,0.0,0.0,2.17,4.69,True,True,False,1.0,True
