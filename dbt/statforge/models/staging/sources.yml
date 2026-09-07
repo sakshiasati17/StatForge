@@ -1,0 +1,51 @@
+version: 2
+
+sources:
+  - name: statforge
+    database: statforge
+    schema: public
+    description: "Raw StatForge PostgreSQL tables"
+    tables:
+      - name: experiments
+        description: "One row per A/B experiment"
+        columns:
+          - name: experiment_id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+          - name: experiment_name
+            tests:
+              - not_null
+
+      - name: experiment_results
+        description: "Statistical test results per experiment and metric"
+        columns:
+          - name: result_id
+            tests:
+              - unique
+              - not_null
+          - name: experiment_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('statforge', 'experiments')
+                  field: experiment_id
+          - name: p_value
+            tests:
+              - not_null
+
+      - name: experiment_observations
+        description: "One row per user observation"
+        columns:
+          - name: observation_id
+            tests:
+              - unique
+              - not_null
+          - name: experiment_id
+            tests:
+              - not_null
+          - name: group_name
+            tests:
+              - accepted_values:
+                  values: ["control", "treatment"]

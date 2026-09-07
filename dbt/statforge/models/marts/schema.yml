@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: mart_experiment_summary
+    description: "One row per experiment with rolled-up stats, lift, and SRM flag. Primary feed for dashboards."
+    columns:
+      - name: experiment_id
+        tests:
+          - unique
+          - not_null
+      - name: p_value
+        tests:
+          - not_null
+      - name: relative_lift_pct
+        description: "(treatment_mean - control_mean) / control_mean"
+      - name: srm_flag
+        description: "True if assignment ratio deviates >5% from expected 50/50"
+
+  - name: mart_daily_metrics
+    description: "Daily treatment lift per experiment. Used for novelty effect detection and time-series charts."
+    columns:
+      - name: experiment_id
+        tests:
+          - not_null
+      - name: observed_date
+        tests:
+          - not_null
+      - name: daily_lift_pct
+        description: "(treatment_daily_mean - control_daily_mean) / control_daily_mean"
