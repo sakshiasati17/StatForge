@@ -21,7 +21,7 @@
 ```bash
 pip install -e .
 streamlit run dashboard/streamlit_app.py   # 7-tab interactive dashboard
-pytest                                    # 65+ unit & simulation tests
+pytest                                    # 64 unit & simulation tests
 ```
 
 ## Criteo Benchmark Case Study
