@@ -1,9 +1,16 @@
 from setuptools import setup, find_packages
 
+src_packages = find_packages(include=["src", "src.*"])
+statforge_packages = [p.replace("src", "statforge") for p in src_packages]
+
 setup(
     name="statforge",
     version="0.1.0",
-    packages=find_packages(),
+    packages=src_packages + statforge_packages,
+    package_dir={
+        "src": "src",
+        "statforge": "src",
+    },
     install_requires=[
         "numpy>=1.24.0",
         "scipy>=1.10.0",

@@ -19,3 +19,4 @@ dbt/statforge/logs/
 dbt/statforge/target/
 stack.txt
 /logs/
+.clean_venv/
