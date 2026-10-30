@@ -11,6 +11,6 @@ build/
 .venv/
 venv/
 env/
-data/*.csv
-data/*.parquet
+/data/
+*.zip
 notebooks/.ipynb_checkpoints/

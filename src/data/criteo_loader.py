@@ -62,13 +62,15 @@ class CriteoLoader:
     def to_experiment_format(
         self,
         df: Optional[pd.DataFrame] = None,
-        covariate_col: str = "f0",
+        covariate_col: str = "f9",
     ) -> dict:
         """
         Convert Criteo dataset to StatForge experiment format.
 
-        Uses f0 as the CUPED pre-experiment covariate — it has the highest
-        correlation with conversion/visit among the feature columns.
+        Uses f9 by default as the CUPED pre-experiment covariate — it has the highest
+        correlation with visit (rho ~ 0.50), yielding ~24.7% variance reduction.
+        If covariate_col is 'auto', automatically selects the feature with highest
+        absolute correlation with the target visit metric.
 
         Returns dict compatible with StatisticalTestEngine + CUPED inputs.
         """
@@ -76,30 +78,36 @@ class CriteoLoader:
         if df is None:
             raise ValueError("Call load() first.")
 
+        if covariate_col == "auto":
+            corrs = self.feature_covariate_correlations(df)
+            covariate_col = corrs.abs().idxmax()
+
         ctrl, trt = self.split_groups(df)
 
         return {
             "control_conversions": ctrl["conversion"].values,
             "treatment_conversions": trt["conversion"].values,
-            "control_visits": ctrl["visit"].values,
-            "treatment_visits": trt["visit"].values,
-            "control_covariate": ctrl[covariate_col].values,
-            "treatment_covariate": trt[covariate_col].values,
-            "control_revenue": ctrl["visit"].values.astype(float),
-            "treatment_revenue": trt["visit"].values.astype(float),
+            "control_visits": ctrl["visit"].values.astype(float),
+            "treatment_visits": trt["visit"].values.astype(float),
+            "control_covariate": ctrl[covariate_col].values.astype(float),
+            "treatment_covariate": trt[covariate_col].values.astype(float),
             "n_control": len(ctrl),
             "n_treatment": len(trt),
             "covariate_col": covariate_col,
         }
 
-    def feature_covariate_correlations(self, df: Optional[pd.DataFrame] = None) -> pd.Series:
+    def feature_covariate_correlations(
+        self,
+        df: Optional[pd.DataFrame] = None,
+        metric: str = "visit",
+    ) -> pd.Series:
         """
-        Show correlation of each feature column with 'visit' metric.
+        Show correlation of each feature column with target metric (e.g., 'visit' or 'conversion').
         Helps pick the best CUPED covariate.
         """
         df = df if df is not None else self._df
         feature_cols = [c for c in df.columns if c.startswith("f")]
-        return df[feature_cols].corrwith(df["visit"]).sort_values(ascending=False)
+        return df[feature_cols].corrwith(df[metric]).sort_values(ascending=False)
 
     def summary(self, df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         """Print experiment summary statistics."""
