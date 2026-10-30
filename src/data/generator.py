@@ -36,8 +36,9 @@ class ExperimentDataGenerator:
             converted, revenue, session_count
         """
         if srm_inject:
-            n_treatment = int((n_control + n_treatment) * srm_ratio)
-            n_control = int((n_control + n_treatment) * (1 - srm_ratio))
+            total_n = n_control + n_treatment
+            n_treatment = int(total_n * srm_ratio)
+            n_control = total_n - n_treatment
 
         control_df = self._generate_group(
             n=n_control,

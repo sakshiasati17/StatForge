@@ -57,7 +57,7 @@ class SRMDetector:
                              Defaults to equal allocation.
             alpha: significance level (default 0.01 — conservative for SRM)
         """
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         groups = list(observed_counts.keys())
         observed = np.array([observed_counts[g] for g in groups], dtype=float)
         total = observed.sum()

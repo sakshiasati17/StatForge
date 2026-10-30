@@ -31,7 +31,6 @@ cp dbt/profiles.yml ~/.dbt/profiles.yml
 export DB_HOST=localhost DB_USER=postgres DB_PASSWORD=... DB_NAME=statforge
 
 cd dbt/statforge
-dbt deps
 dbt run          # build all models
 dbt test         # run schema + custom tests
 dbt docs generate && dbt docs serve   # interactive lineage graph

@@ -1,0 +1,75 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.2, pluggy-1.6.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/sakshiasati/staforge
+configfile: pytest.ini
+testpaths: tests
+plugins: mock-3.14.1, anyio-3.7.1, langsmith-0.4.38
+collecting ... collecting 5 items                                                             collecting 19 items                                                            collected 64 items                                                             
+
+tests/test_cuped.py::test_fit_returns_theta PASSED                       [  1%]
+tests/test_cuped.py::test_variance_reduction_positive PASSED             [  3%]
+tests/test_cuped.py::test_variance_reduction_reasonable PASSED           [  4%]
+tests/test_cuped.py::test_adjusted_arrays_same_length PASSED             [  6%]
+tests/test_cuped.py::test_transform_without_fit_raises PASSED            [  7%]
+tests/test_multiple_testing.py::test_bonferroni_adjusts_upward PASSED    [  9%]
+tests/test_multiple_testing.py::test_bh_less_conservative_than_bonferroni PASSED [ 10%]
+tests/test_multiple_testing.py::test_bonferroni_significant_small_p PASSED [ 12%]
+tests/test_multiple_testing.py::test_adjusted_p_capped_at_1 PASSED       [ 14%]
+tests/test_multiple_testing.py::test_compare_methods_dataframe PASSED    [ 15%]
+tests/test_multiple_testing.py::test_metric_names_passed_through PASSED  [ 17%]
+tests/test_novelty_detection.py::test_detects_novelty_with_high_decay PASSED [ 18%]
+tests/test_novelty_detection.py::test_no_novelty_with_stable_effect PASSED [ 20%]
+tests/test_novelty_detection.py::test_slope_negative_on_novelty PASSED   [ 21%]
+tests/test_novelty_detection.py::test_daily_lifts_length PASSED          [ 23%]
+tests/test_novelty_detection.py::test_r_squared_in_range PASSED          [ 25%]
+tests/test_novelty_detection.py::test_too_few_days_raises PASSED         [ 26%]
+tests/test_novelty_detection.py::test_recommendation_is_string PASSED    [ 28%]
+tests/test_novelty_detection.py::test_stabilization_day_calculated_correctly PASSED [ 29%]
+tests/test_power_analysis.py::test_sample_size_proportions_basic PASSED  [ 31%]
+tests/test_power_analysis.py::test_sample_size_decreases_with_larger_effect PASSED [ 32%]
+tests/test_power_analysis.py::test_sample_size_means_basic PASSED        [ 34%]
+tests/test_power_analysis.py::test_achieved_power_increases_with_n PASSED [ 35%]
+tests/test_power_analysis.py::test_achieved_power_at_design_n PASSED     [ 37%]
+tests/test_power_analysis.py::test_power_curve_length PASSED             [ 39%]
+tests/test_power_analysis.py::test_mde_positive PASSED                   [ 40%]
+tests/test_sequential.py::test_alpha_spending_at_1 PASSED                [ 42%]
+tests/test_sequential.py::test_alpha_spending_monotone PASSED            [ 43%]
+tests/test_sequential.py::test_pocock_spending_at_1 PASSED               [ 45%]
+tests/test_sequential.py::test_run_sequence_returns_result PASSED        [ 46%]
+tests/test_sequential.py::test_no_false_positives_under_null PASSED      [ 48%]
+tests/test_sequential.py::test_total_alpha_spent_le_alpha PASSED         [ 50%]
+tests/test_sequential.py::test_obrien_fleming_boundaries_decreasing PASSED [ 51%]
+tests/test_simulation_validation.py::TestTypeIError::test_t_test_type_i_error PASSED [ 53%]
+tests/test_simulation_validation.py::TestTypeIError::test_chi_square_type_i_error PASSED [ 54%]
+tests/test_simulation_validation.py::TestTypeIError::test_mann_whitney_type_i_error PASSED [ 56%]
+tests/test_simulation_validation.py::TestPower::test_t_test_power_at_designed_n PASSED [ 57%]
+tests/test_simulation_validation.py::TestPower::test_power_increases_with_effect_size PASSED [ 59%]
+tests/test_simulation_validation.py::TestCICoverage::test_t_test_ci_coverage PASSED [ 60%]
+tests/test_simulation_validation.py::TestCICoverage::test_t_test_ci_contains_zero_under_null PASSED [ 62%]
+tests/test_simulation_validation.py::TestCUPEDSimulation::test_cuped_reduces_variance PASSED [ 64%]
+tests/test_simulation_validation.py::TestCUPEDSimulation::test_cuped_zero_correlation_no_reduction PASSED [ 65%]
+tests/test_srm.py::test_no_srm_balanced PASSED                           [ 67%]
+tests/test_srm.py::test_srm_detected_severe PASSED                       [ 68%]
+tests/test_srm.py::test_no_srm_small_deviation PASSED                    [ 70%]
+tests/test_srm.py::test_custom_expected_ratio PASSED                     [ 71%]
+tests/test_srm.py::test_result_has_message PASSED                        [ 73%]
+tests/test_srm.py::test_to_dict_keys PASSED                              [ 75%]
+tests/test_srm.py::test_generator_srm_injection_counts PASSED            [ 76%]
+tests/test_statistical_tests.py::test_t_test_null_not_significant PASSED [ 78%]
+tests/test_statistical_tests.py::test_t_test_effect_significant PASSED   [ 79%]
+tests/test_statistical_tests.py::test_mann_whitney_returns_result PASSED [ 81%]
+tests/test_statistical_tests.py::test_chi_square_detects_difference PASSED [ 82%]
+tests/test_statistical_tests.py::test_chi_square_null_not_significant PASSED [ 84%]
+tests/test_statistical_tests.py::test_result_ci_contains_zero_under_null PASSED [ 85%]
+tests/test_statistical_tests.py::test_to_dict_keys PASSED                [ 87%]
+tests/test_statistical_tests.py::test_one_tailed_treatment_greater_significant PASSED [ 89%]
+tests/test_statistical_tests.py::test_treatment_worse_direction PASSED   [ 90%]
+tests/test_statistical_tests.py::test_constant_outcomes_identical PASSED [ 92%]
+tests/test_statistical_tests.py::test_constant_outcomes_different_levels PASSED [ 93%]
+tests/test_statistical_tests.py::test_small_sample_sizes PASSED          [ 95%]
+tests/test_statistical_tests.py::test_unequal_sample_sizes_and_variances PASSED [ 96%]
+tests/test_statistical_tests.py::test_chi_square_zero_and_full_conversions PASSED [ 98%]
+tests/test_statistical_tests.py::test_insufficient_sample_raises PASSED  [100%]
+
+======================== 64 passed in 83.79s (0:01:23) =========================

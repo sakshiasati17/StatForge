@@ -4,14 +4,11 @@ Tableau data export utility.
 Generates CSV files formatted for Tableau Public dashboards:
 1. experiment_summary.csv   — one row per experiment with key metrics
 2. time_series.csv          — running significance and cumulative lift over time
-3. metric_results.csv       — per-metric test results with CIs
-4. srm_flags.csv            — SRM detection status per experiment
-
-These CSVs are consumed by the Tableau workbook (dashboard/statforge_tableau.twb).
 """
 
 import numpy as np
 import pandas as pd
+import json
 from pathlib import Path
 import sys
 import os
@@ -136,6 +133,69 @@ def generate_time_series(n_days: int = 30) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def export_criteo(results_path: str = "results/criteo_results.json") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Exports Criteo benchmark results to Tableau-ready CSVs."""
+    path = Path(results_path)
+    if not path.exists():
+        # Look in workspace root if run from dashboard/
+        alt_path = Path(__file__).resolve().parent.parent / "results" / "criteo_results.json"
+        if alt_path.exists():
+            path = alt_path
+        else:
+            print(f"Warning: {results_path} not found. Run scripts/criteo_analysis.py first.")
+            return pd.DataFrame(), pd.DataFrame()
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    summary_rows = [
+        {
+            "metric": "Conversion Rate",
+            "control_rate": data["conversion_test"]["control_rate"],
+            "treatment_rate": data["conversion_test"]["treatment_rate"],
+            "relative_lift_pct": data["conversion_test"]["relative_lift_pct"],
+            "p_value": data["conversion_test"]["p_value"],
+            "significant": data["conversion_test"]["significant"],
+            "sample_size": data["dataset"]["sample_size"],
+            "srm_p_value": data["srm_check"]["p_value"],
+        },
+        {
+            "metric": "Visit Rate",
+            "control_rate": data["visit_test"]["control_rate"],
+            "treatment_rate": data["visit_test"]["treatment_rate"],
+            "relative_lift_pct": data["visit_test"]["relative_lift_pct"],
+            "p_value": data["visit_test"]["p_value"],
+            "significant": data["visit_test"]["significant"],
+            "sample_size": data["dataset"]["sample_size"],
+            "srm_p_value": data["srm_check"]["p_value"],
+        },
+    ]
+    df_summary = pd.DataFrame(summary_rows)
+    df_summary.to_csv(OUTPUT_DIR / "criteo_summary.csv", index=False)
+    print(f"  Saved Criteo summary → {OUTPUT_DIR / 'criteo_summary.csv'}")
+
+    cov_rows = []
+    for feat, corr in data["covariate_correlations_with_visit"].items():
+        is_f9 = feat == "f9"
+        is_f0 = feat == "f0"
+        vr = data["cuped_in_sample"].get(feat, {}).get("variance_reduction_pct", None)
+        vr_held = data["cuped_held_out"].get(feat, {}).get("test_variance_reduction_pct", None)
+        cov_rows.append({
+            "feature": feat,
+            "pearson_correlation": corr,
+            "abs_correlation": abs(corr),
+            "is_optimal": is_f9,
+            "is_default_mistake": is_f0,
+            "variance_reduction_pct": vr,
+            "held_out_variance_reduction_pct": vr_held,
+        })
+    df_cov = pd.DataFrame(cov_rows).sort_values("pearson_correlation", ascending=False)
+    df_cov.to_csv(OUTPUT_DIR / "criteo_covariates.csv", index=False)
+    print(f"  Saved Criteo covariates → {OUTPUT_DIR / 'criteo_covariates.csv'}")
+
+    return df_summary, df_cov
+
+
 def export_all():
     print("Generating experiment summary...")
     summary = generate_experiment_summary()
@@ -147,9 +207,13 @@ def export_all():
     ts.to_csv(OUTPUT_DIR / "time_series.csv", index=False)
     print(f"  Saved {len(ts)} days → {OUTPUT_DIR / 'time_series.csv'}")
 
+    print("Generating Criteo benchmark exports...")
+    export_criteo()
+
     print("Done. Import these CSVs into Tableau Public.")
     return summary, ts
 
 
 if __name__ == "__main__":
     export_all()
+

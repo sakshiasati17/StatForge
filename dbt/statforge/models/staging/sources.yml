@@ -9,19 +9,20 @@ sources:
       - name: experiments
         description: "One row per A/B experiment"
         columns:
-          - name: experiment_id
+          - name: id
             description: "Primary key"
             tests:
               - unique
               - not_null
-          - name: experiment_name
+          - name: name
             tests:
               - not_null
 
-      - name: experiment_results
-        description: "Statistical test results per experiment and metric"
+      - name: experiment_assignments
+        description: "User variant assignments per experiment"
         columns:
-          - name: result_id
+          - name: id
+            description: "Primary key"
             tests:
               - unique
               - not_null
@@ -30,22 +31,44 @@ sources:
               - not_null
               - relationships:
                   to: source('statforge', 'experiments')
-                  field: experiment_id
-          - name: p_value
+                  field: id
+          - name: variant
             tests:
-              - not_null
+              - accepted_values:
+                  values: ["control", "treatment"]
 
-      - name: experiment_observations
-        description: "One row per user observation"
+      - name: experiment_results
+        description: "Statistical test results per experiment and metric"
         columns:
-          - name: observation_id
+          - name: id
+            description: "Primary key"
             tests:
               - unique
               - not_null
           - name: experiment_id
             tests:
               - not_null
-          - name: group_name
+              - relationships:
+                  to: source('statforge', 'experiments')
+                  field: id
+          - name: p_value
             tests:
-              - accepted_values:
-                  values: ["control", "treatment"]
+              - not_null
+
+      - name: experiment_observations
+        description: "One row per user metric observation"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+          - name: experiment_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('statforge', 'experiments')
+                  field: id
+          - name: metric_value
+            tests:
+              - not_null

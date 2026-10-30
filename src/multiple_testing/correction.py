@@ -46,7 +46,7 @@ class MultipleTestingCorrection:
         Bonferroni correction: adjusted_alpha = alpha / n_tests.
         Controls FWER at alpha level. Very conservative when tests are correlated.
         """
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         n = len(p_values)
         adjusted = [min(p * n, 1.0) for p in p_values]
         rejected = [p < alpha for p in adjusted]
@@ -71,7 +71,7 @@ class MultipleTestingCorrection:
         Benjamini-Hochberg procedure: controls FDR at alpha level.
         Less conservative than Bonferroni; preferred when many metrics are tested.
         """
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         n = len(p_values)
         order = np.argsort(p_values)
         sorted_p = np.array(p_values)[order]

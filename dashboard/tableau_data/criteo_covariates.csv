@@ -1,0 +1,13 @@
+feature,pearson_correlation,abs_correlation,is_optimal,is_default_mistake,variance_reduction_pct,held_out_variance_reduction_pct
+f9,0.497437,0.497437,True,False,24.744324522802643,24.533778613560074
+f4,0.272327,0.272327,False,False,,
+f10,0.21091,0.21091,False,False,,
+f1,0.113,0.113,False,False,,
+f7,0.096935,0.096935,False,False,,
+f2,-0.03131,0.03131,False,False,,
+f0,-0.135781,0.135781,False,True,1.8436354057546178,1.8169662760920247
+f6,-0.140015,0.140015,False,False,,
+f5,-0.143242,0.143242,False,False,,
+f3,-0.210171,0.210171,False,False,,
+f11,-0.218034,0.218034,False,False,,
+f8,-0.4595,0.4595,False,False,,

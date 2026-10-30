@@ -1,0 +1,131 @@
+{
+  "dataset": {
+    "name": "Criteo Uplift Modeling Dataset v2.1",
+    "citation": "Diemert, E., Meynet, J., Galland, P., & Lefortier, D. (2018). A Large Scale Benchmark for Uplift Modeling. ACM KDD Workshop.",
+    "source": "https://www.kaggle.com/datasets/arashnic/uplift-modeling",
+    "sample_size": 500000,
+    "sample_seed": 42,
+    "control_users": 74999,
+    "treatment_users": 425001,
+    "split_ratio": {
+      "control": 0.149998,
+      "treatment": 0.850002
+    },
+    "split_documentation": "The 85/15 treatment/control split is documented in Diemert et al. (2018), reflecting Criteo's production ad auction configuration where 85% of traffic received targeted advertising and 15% was randomly held out."
+  },
+  "srm_check": {
+    "chi2_statistic": 1.6e-05,
+    "p_value": 0.99684,
+    "srm_detected": false,
+    "message": "No SRM detected (p=0.996840). Assignment ratios look healthy."
+  },
+  "covariate_balance": {
+    "f0": {
+      "control_mean": 19.62651035293846,
+      "treatment_mean": 19.624708613180847,
+      "normalized_difference": -0.000335,
+      "t_statistic": -0.0845,
+      "p_value": 0.9326942651530323,
+      "balanced": true
+    },
+    "f9": {
+      "control_mean": 15.921348523294736,
+      "treatment_mean": 16.04708727480986,
+      "normalized_difference": 0.018087,
+      "t_statistic": 4.6115,
+      "p_value": 4.001568643881662e-06,
+      "balanced": true
+    }
+  },
+  "train_covariate_selection": {
+    "selected_feature": "f9",
+    "train_correlations": {
+      "f9": 0.499496,
+      "f4": 0.270829,
+      "f10": 0.214045,
+      "f1": 0.112596,
+      "f7": 0.098523,
+      "f2": -0.031865,
+      "f0": -0.136728,
+      "f6": -0.142614,
+      "f5": -0.145125,
+      "f11": -0.213641,
+      "f3": -0.213729,
+      "f8": -0.462458
+    }
+  },
+  "conversion_test": {
+    "control_conversions": 150,
+    "control_rate": 0.002,
+    "treatment_conversions": 1382,
+    "treatment_rate": 0.003252,
+    "relative_lift_pct": 62.59,
+    "p_value": 1.0756547410383717e-08,
+    "significant": true
+  },
+  "visit_test": {
+    "control_visits": 2950,
+    "control_rate": 0.039334,
+    "treatment_visits": 20751,
+    "treatment_rate": 0.048826,
+    "relative_lift_pct": 24.13,
+    "p_value": 1.6823323769452567e-29,
+    "significant": true
+  },
+  "covariate_correlations_with_visit": {
+    "f9": 0.497437,
+    "f4": 0.272327,
+    "f10": 0.21091,
+    "f1": 0.113,
+    "f7": 0.096935,
+    "f2": -0.03131,
+    "f0": -0.135781,
+    "f6": -0.140015,
+    "f5": -0.143242,
+    "f3": -0.210171,
+    "f11": -0.218034,
+    "f8": -0.4595
+  },
+  "cuped_in_sample": {
+    "f0": {
+      "theta": -0.005366173024681593,
+      "variance_reduction_pct": 1.8436354057546178,
+      "original_variance": 0.045155050396000006,
+      "adjusted_variance": 0.04432255589941301,
+      "sample_size_reduction_pct": 1.8436354057546178,
+      "raw_treatment_effect_se": 0.0007830140650381646,
+      "adjusted_treatment_effect_se": 0.0007777622738341092,
+      "treatment_effect_se_reduction_pct": 0.6707147979263195
+    },
+    "f9": {
+      "theta": 0.01506021833046128,
+      "variance_reduction_pct": 24.744324522802643,
+      "original_variance": 0.045155050396000006,
+      "adjusted_variance": 0.033981738187578686,
+      "sample_size_reduction_pct": 24.744324522802643,
+      "raw_treatment_effect_se": 0.0007830140650381646,
+      "adjusted_treatment_effect_se": 0.0006894257744242376,
+      "treatment_effect_se_reduction_pct": 11.952312837364598
+    }
+  },
+  "cuped_held_out": {
+    "f0": {
+      "train_theta": -0.005420061245201124,
+      "test_original_variance": 0.044831041388165564,
+      "test_adjusted_variance": 0.04401647648492174,
+      "test_variance_reduction_pct": 1.8169662760920247,
+      "test_raw_se": 0.001105674295959954,
+      "test_adjusted_se": 0.001097893616505615,
+      "test_se_reduction_pct": 0.7037044709069518
+    },
+    "f9": {
+      "train_theta": 0.015159267091857912,
+      "test_original_variance": 0.044831041388165564,
+      "test_adjusted_variance": 0.033832292943839534,
+      "test_variance_reduction_pct": 24.533778613560074,
+      "test_raw_se": 0.001105674295959954,
+      "test_adjusted_se": 0.000979956660873072,
+      "test_se_reduction_pct": 11.37022317930736
+    }
+  }
+}

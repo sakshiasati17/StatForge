@@ -49,7 +49,7 @@ final as (
         e.status,
         e.alpha,
         e.target_power,
-        e.min_detectable_effect,
+        e.intended_split,
         e.created_at,
 
         c.n_control,
@@ -73,9 +73,9 @@ final as (
         r.ci_upper,
         r.significant,
 
-        -- sample ratio mismatch flag (heuristic: >5% deviation from expected)
+        -- sample ratio mismatch flag: deviation >5% from intended treatment split
         case
-            when abs(c.n_control::float / (c.n_control + t.n_treatment) - 0.5) > 0.05
+            when abs(t.n_treatment::float / (c.n_control + t.n_treatment) - coalesce(e.intended_split, 0.5)) > 0.05
             then true else false
         end                                                      as srm_flag
 
