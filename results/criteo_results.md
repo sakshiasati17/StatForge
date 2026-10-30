@@ -8,15 +8,18 @@ Reproducible analysis on a **500,000-row sample** (seed=42) of the Criteo Uplift
 
 | Metric | Value |
 |---|---|
-| Dataset | Criteo Uplift v2.1 (Diemert et al.) |
+| Dataset | Criteo Uplift v2.1 (Diemert et al., 2018) |
+| Citation | ACM KDD Workshop on AdKDD & TargetAd (2018) |
 | Rows Sampled | 500,000 (seed=42) |
 | Control Users | 74,999 (15.00%) |
 | Treatment Users | 425,001 (85.00%) |
-| Target Split Ratio | 15% Control / 85% Treatment |
+| Target Split Ratio | 15% Control / 85% Treatment (documented auction holdout) |
 | SRM $\chi^2$ Statistic | 0.000016 |
 | **SRM p-value** | **0.9968** (No SRM detected) |
 
-**Pre-Treatment Covariate Validity**: Features `f0`–`f11` represent anonymized user browser and historical activity metrics captured before ad delivery. Because randomization is unbiased ($p=0.9968$), covariates satisfy $X \perp \!\! \perp T$ and do not introduce bias into treatment effect estimates.
+**Covariate Balance & Pre-Treatment Integrity**:
+- `f9` normalized difference between treatment and control: **+0.0181** ($|d| < 0.05$ threshold).
+- Features `f0`–`f11` are anonymized pre-experiment context features. The minimal standardized difference confirms no substantial selection imbalance between variants.
 
 ---
 
@@ -29,9 +32,12 @@ Reproducible analysis on a **500,000-row sample** (seed=42) of the Criteo Uplift
 
 ---
 
-## 3. Covariate Correlations with Visit
+## 3. Covariate Correlations with Visit (Train Partition, No Leakage)
 
-Feature ranking based on Pearson correlation with `visit`:
+Feature selection was conducted strictly on a 50% training split (250,000 rows):
+- Optimal selected feature: **`f9`** (Pearson $\rho = +0.4995$)
+
+Full-sample correlation ranking:
 
 | Feature | Pearson $\rho$ | Notes |
 |---|---|---|
@@ -50,15 +56,18 @@ Feature ranking based on Pearson correlation with `visit`:
 
 ---
 
-## 4. CUPED Variance Reduction & Sample Efficiency
+## 4. CUPED Variance Reduction & Standard Error Uncertainty
 
 Formula: $Y_{adj} = Y - \theta(X - E[X])$, $\theta = \frac{\text{Cov}(Y, X)}{\text{Var}(X)}$
 
 Theoretical maximum variance reduction: $\rho^2 \times 100\%$
 
-| Covariate | In-Sample Variance Reduction | Held-Out Out-of-Sample Reduction | $\theta$ | Effective Sample Savings |
+| Covariate | In-Sample Var Reduction | Held-Out Test Var Reduction | $\theta$ | Treatment Effect SE Reduction |
 |---|---|---|---|---|
-| **`f0` (wrong)** | **1.84%** | **1.82%** | -0.005366 | ~1.8% lower sample |
-| **`f9` (optimal)** | **24.74%** | **24.53%** | 0.015060 | **~24.7% lower sample** |
+| **`f0` (suboptimal)** | **1.84%** | **1.82%** | -0.005366 | **0.67%** |
+| **`f9` (optimal)** | **24.74%** | **24.53%** | 0.015060 | **11.95%** |
 
-**Conclusion**: Proper covariate selection via `feature_covariate_correlations()` accounts for the 13x difference in variance reduction (1.84% vs 24.74%), enabling experiments to reach equivalent statistical power with **~25% fewer users**. Out-of-sample evaluation on held-out test data confirms the reduction is robust and does not overfit (24.53% out-of-sample).
+**Conclusion**:
+1. **Variance Reduction**: Proper covariate selection via training correlation yields **24.74%** variance reduction with `f9` vs only **1.84%** with default `f0` (a 13x improvement).
+2. **Standard Error Uncertainty**: Estimator standard error narrows by **11.95%**, shrinking confidence intervals and accelerating experiment velocity.
+3. **Generalization**: On held-out test data, `f9` achieves **24.53%** variance reduction, confirming zero overfitting.

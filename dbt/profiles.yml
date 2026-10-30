@@ -5,7 +5,7 @@ statforge:
       type: postgres
       host: "{{ env_var('DB_HOST', 'localhost') }}"
       port: "{{ env_var('DB_PORT', '5432') | int }}"
-      user: "{{ env_var('DB_USER', 'postgres') }}"
+      user: "{{ env_var('DB_USER', 'sakshiasati') }}"
       password: "{{ env_var('DB_PASSWORD', '') }}"
       dbname: "{{ env_var('DB_NAME', 'statforge') }}"
       schema: analytics

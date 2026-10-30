@@ -1,0 +1,3 @@
+metric,control_rate,treatment_rate,relative_lift_pct,p_value,significant,sample_size,srm_p_value
+Conversion Rate,0.002,0.003252,62.59,1.0756547410383717e-08,True,500000,0.99684
+Visit Rate,0.039334,0.048826,24.13,1.6823323769452567e-29,True,500000,0.99684

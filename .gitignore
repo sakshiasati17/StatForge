@@ -14,3 +14,8 @@ env/
 /data/
 *.zip
 notebooks/.ipynb_checkpoints/
+dbt/.user.yml
+dbt/statforge/logs/
+dbt/statforge/target/
+stack.txt
+/logs/

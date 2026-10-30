@@ -50,12 +50,20 @@ class StatisticalTestEngine:
         """Welch's t-test for comparing means between two groups."""
         alpha = alpha if alpha is not None else self.alpha
         alternative = "two-sided" if self.two_tailed else "greater"
-
-        # Compare treatment vs control so positive statistic corresponds to treatment > control
-        stat, p = stats.ttest_ind(treatment, control, equal_var=equal_var, alternative=alternative)
+        control = np.asarray(control, dtype=float)
+        treatment = np.asarray(treatment, dtype=float)
+        n_c, n_t = len(control), len(treatment)
+        if n_c < 2 or n_t < 2:
+            raise ValueError("t-test requires at least 2 observations per group")
 
         mean_diff = float(np.mean(treatment) - np.mean(control))
-        n_c, n_t = len(control), len(treatment)
+
+        if np.var(control) == 0 and np.var(treatment) == 0 and mean_diff == 0:
+            # Both groups constant and identical: no evidence of any difference
+            stat, p = 0.0, 1.0
+        else:
+            # Compare treatment vs control so positive statistic corresponds to treatment > control
+            stat, p = stats.ttest_ind(treatment, control, equal_var=equal_var, alternative=alternative)
         var_c = float(np.var(control, ddof=1)) if n_c > 1 else 0.0
         var_t = float(np.var(treatment, ddof=1)) if n_t > 1 else 0.0
 
@@ -103,12 +111,18 @@ class StatisticalTestEngine:
         """Non-parametric Mann-Whitney U test for comparing distributions."""
         alpha = alpha if alpha is not None else self.alpha
         alternative = "two-sided" if self.two_tailed else "greater"
+        control = np.asarray(control, dtype=float)
+        treatment = np.asarray(treatment, dtype=float)
+        n_c, n_t = len(control), len(treatment)
+        if n_c < 1 or n_t < 1:
+            raise ValueError("Mann-Whitney requires at least 1 observation per group")
 
         # Compare treatment vs control so alternative="greater" tests treatment > control
         stat, p = stats.mannwhitneyu(treatment, control, alternative=alternative)
-
-        n_c, n_t = len(control), len(treatment)
-        r = 1 - (2 * float(stat)) / (n_c * n_t) if (n_c > 0 and n_t > 0) else 0.0
+        if np.isnan(p):
+            p = 1.0
+        # Rank-biserial correlation: U is treatment's U, so r > 0 means treatment tends to be larger
+        r = (2 * float(stat)) / (n_c * n_t) - 1
 
         ci = self._bootstrap_ci(control, treatment, np.median, alpha)
 
@@ -134,12 +148,20 @@ class StatisticalTestEngine:
     ) -> TestResult:
         """Chi-square test for comparing conversion rates."""
         alpha = alpha if alpha is not None else self.alpha
+        if n_control <= 0 or n_treatment <= 0:
+            raise ValueError("group sizes must be positive")
+        if not (0 <= conversions_control <= n_control and 0 <= conversions_treatment <= n_treatment):
+            raise ValueError("conversions must be between 0 and the group size")
 
         observed = np.array([
             [conversions_control, n_control - conversions_control],
             [conversions_treatment, n_treatment - conversions_treatment],
         ])
-        stat, p, dof, expected = stats.chi2_contingency(observed, correction=False)
+        if (observed.sum(axis=0) == 0).any():
+            # Everyone (or no one) converted in both groups: rates are identical
+            stat, p = 0.0, 1.0
+        else:
+            stat, p, dof, expected = stats.chi2_contingency(observed, correction=False)
 
         rate_c = conversions_control / n_control
         rate_t = conversions_treatment / n_treatment

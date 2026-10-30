@@ -5,17 +5,19 @@ with source as (
 
 cleaned as (
     select
-        experiment_id,
-        trim(experiment_name)                          as experiment_name,
+        id                                             as experiment_id,
+        trim(name)                                     as experiment_name,
         trim(description)                              as description,
         lower(trim(status))                            as status,
         cast(alpha as numeric(5,4))                    as alpha,
-        cast(power as numeric(5,4))                    as target_power,
-        cast(min_detectable_effect as numeric(10,6))   as min_detectable_effect,
+        cast(power_target as numeric(5,4))             as target_power,
+        cast(intended_split as numeric(5,4))           as intended_split,
+        start_date::timestamptz                        as start_date,
+        end_date::timestamptz                          as end_date,
         created_at::timestamptz                        as created_at,
         updated_at::timestamptz                        as updated_at
     from source
-    where experiment_id is not null
+    where id is not null
 )
 
 select * from cleaned
