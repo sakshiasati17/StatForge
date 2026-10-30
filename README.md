@@ -36,10 +36,12 @@ Reproducible benchmark on a 500,000-row sample (seed=42) of Criteo's 13.9M-row u
 | Covariate Balance ($f9$) | **Normalized diff = +0.0181** | Well within experimental balance threshold ($|d| < 0.05$) |
 | Conversion Rate Lift | **+62.59%** ($p = 1.08 \times 10^{-8}$) | 0.2000% control → 0.3252% treatment |
 | Visit Rate Lift | **+24.13%** ($p = 1.68 \times 10^{-29}$) | 3.9334% control → 4.8826% treatment |
-| CUPED — wrong feature (`f0`) | 1.84% variance reduction | Typical mistake: selecting first column without correlation |
-| CUPED — optimal feature (`f9`, $\rho \approx 0.50$) | **24.74% variance reduction** | Feature selection on training split only (zero leakage) |
-| Out-of-Sample Held-Out Reduction | **24.53% variance reduction** | Evaluated on held-out test data (confirms zero overfitting) |
-| Treatment Effect SE Reduction | **11.95% standard error reduction** | Narrows confidence intervals and shortens required runtime |
+| Training Covariate Selection | **`f9`: Training $r = +0.4995$** | Fit on 50% training split ($N=250,000$) to prevent data leakage |
+| Benchmark Full Correlation | **`f9`: Benchmark $r = +0.4974$** | Evaluated across full 500,000 users (`f0` suboptimal: $r = -0.1358$) |
+| CUPED — Suboptimal Covariate (`f0`) | 1.84% in-sample / 1.82% held-out | Demonstrates consequence of arbitrary feature selection |
+| CUPED — In-Sample Variance Reduction | **24.74% variance reduction** | Applied to full 500K sample (requires 24.74% fewer users) |
+| CUPED — Held-Out Test Reduction | **24.53% out-of-sample reduction**| Evaluated on 250K held-out test users (confirms zero overfitting) |
+| Treatment Effect SE Reduction | **11.95% uncertainty reduction** | Standard error narrows from 0.000783 to 0.000689 ($1 - \sqrt{1 - \rho^2}$) |
 
 ## Simulation-Based Statistical Validation
 
