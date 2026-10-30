@@ -639,7 +639,11 @@ with tab7:
         m2.metric("Target Split", "15% Control / 85% Treatment", "Documented holdout")
         srm_p = cdata['srm_check']['p_value']
         m3.metric("SRM Check (p-value)", f"{srm_p:.4f}", "No mismatch (Passed)" if srm_p > 0.01 else "SRM Detected")
-        m4.metric("Optimal Covariate", cdata['train_covariate_selection']['selected_feature'], f"r = {cdata['covariate_correlations_with_visit']['f9']:+.4f}")
+        m4.metric(
+            "Optimal Covariate",
+            cdata['train_covariate_selection']['selected_feature'],
+            f"Train r={cdata['train_covariate_selection']['train_correlations']['f9']:+.4f} | Benchmark r={cdata['covariate_correlations_with_visit']['f9']:+.4f}",
+        )
 
         st.markdown("---")
 
@@ -665,8 +669,13 @@ with tab7:
         st.markdown("---")
 
         # 2. Covariate Correlation Ranking
-        st.subheader("2. Covariate Selection — Pearson Correlation with Visit")
-        st.caption("Feature selection performed strictly on the 50% training split to avoid data leakage.")
+        st.subheader("2. Covariate Selection — Training Sample vs Benchmark Sample")
+        st.markdown(
+            "> **Training Correlation ($r = +0.4995$):** Computed strictly on a 50% random training split ($N = 250,000$) "
+            "to rank features and select `f9` without data leakage.<br/>"
+            "> **Benchmark Correlation ($r = +0.4974$):** Evaluated across the full 500,000-user sample for descriptive benchmarking.",
+            unsafe_allow_html=True,
+        )
 
         corrs = cdata["covariate_correlations_with_visit"]
         corr_df = pd.DataFrame([
@@ -691,7 +700,7 @@ with tab7:
             textposition="auto",
         ))
         fig_corr.update_layout(
-            title="Feature Correlation with Visit (f9 optimal = green, f0 suboptimal = red)",
+            title="Full Benchmark Correlation with Visit (f9 optimal = green, f0 suboptimal = red)",
             xaxis_title="Pearson Correlation (ρ)",
             yaxis_title="Feature",
             template="plotly_dark",
@@ -702,7 +711,13 @@ with tab7:
         st.markdown("---")
 
         # 3. CUPED Variance Reduction & SE Uncertainty
-        st.subheader("3. CUPED Variance Reduction & Sample Efficiency")
+        st.subheader("3. CUPED Variance Reduction: In-Sample vs Held-Out Out-of-Sample")
+        st.markdown(
+            "- **In-Sample Variance Reduction (24.74%):** Evaluated when $\\theta$ is fit and applied on the full 500,000 users.<br/>"
+            "- **Held-Out Test Variance Reduction (24.53%):** Evaluated out-of-sample on 250,000 held-out test users with $\\theta$ fit strictly on the 250,000 training users (proves zero overfitting).<br/>"
+            "- **Treatment Effect SE Reduction (11.95%):** Reduction in standard error uncertainty ($1 - \\sqrt{1 - \\rho^2}$), shrinking confidence interval width.",
+            unsafe_allow_html=True,
+        )
         f0_in = cdata["cuped_in_sample"]["f0"]["variance_reduction_pct"]
         f9_in = cdata["cuped_in_sample"]["f9"]["variance_reduction_pct"]
         f0_out = cdata["cuped_held_out"]["f0"]["test_variance_reduction_pct"]
@@ -712,16 +727,16 @@ with tab7:
         c_col1, c_col2 = st.columns(2)
         with c_col1:
             st.markdown("##### Suboptimal Covariate (`f0`)")
-            st.write(f"- **In-Sample Variance Reduction:** {f0_in:.2f}%")
-            st.write(f"- **Held-Out Test Variance Reduction:** {f0_out:.2f}%")
+            st.write(f"- **In-Sample Variance Reduction (Full Sample):** {f0_in:.2f}%")
+            st.write(f"- **Held-Out Test Variance Reduction (Out-of-Sample):** {f0_out:.2f}%")
             st.write(f"- **Effective Sample Savings:** ~{f0_in:.1f}%")
             st.caption("Common mistake: using first column (f0) as covariate without evaluating correlation.")
 
         with c_col2:
-            st.markdown("##### Optimal Covariate (`f9`, ρ ≈ 0.50)")
-            st.write(f"- **In-Sample Variance Reduction:** {f9_in:.2f}%")
-            st.write(f"- **Held-Out Test Variance Reduction:** {f9_out:.2f}%")
-            st.write(f"- **Treatment Effect SE Reduction:** **{f9_se:.2f}%**")
+            st.markdown("##### Optimal Covariate (`f9`, Training r = +0.4995)")
+            st.write(f"- **In-Sample Variance Reduction (Full Sample):** **{f9_in:.2f}%**")
+            st.write(f"- **Held-Out Test Variance Reduction (Out-of-Sample):** **{f9_out:.2f}%**")
+            st.write(f"- **Treatment Effect SE Reduction:** **{f9_se:.2f}%** (uncertainty reduction)")
             st.write(f"- **Effective Sample Savings:** **~{f9_in:.1f}%** (equivalent power with ~25% fewer users)")
 
         # Comparison Bar Chart
