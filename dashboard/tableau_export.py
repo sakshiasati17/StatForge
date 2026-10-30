@@ -4,10 +4,6 @@ Tableau data export utility.
 Generates CSV files formatted for Tableau Public dashboards:
 1. experiment_summary.csv   — one row per experiment with key metrics
 2. time_series.csv          — running significance and cumulative lift over time
-3. metric_results.csv       — per-metric test results with CIs
-4. srm_flags.csv            — SRM detection status per experiment
-
-These CSVs are consumed by the Tableau workbook (dashboard/statforge_tableau.twb).
 """
 
 import numpy as np

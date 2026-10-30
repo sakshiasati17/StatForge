@@ -43,3 +43,12 @@ def test_to_dict_keys(detector):
     assert "srm_detected" in d
     assert "p_value" in d
     assert "chi2_statistic" in d
+
+
+def test_generator_srm_injection_counts():
+    from src.data.generator import ExperimentDataGenerator
+    gen = ExperimentDataGenerator(seed=42)
+    df = gen.generate(n_control=5000, n_treatment=5000, srm_inject=True, srm_ratio=0.55)
+    assert len(df[df.variant == "treatment"]) == 5500
+    assert len(df[df.variant == "control"]) == 4500
+    assert len(df) == 10000

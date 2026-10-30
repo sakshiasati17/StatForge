@@ -19,8 +19,8 @@ class PowerAnalysis:
         power: Optional[float] = None,
     ) -> int:
         """Calculate required sample size per variant for a proportion test."""
-        alpha = alpha or self.alpha
-        power = power or self.power
+        alpha = alpha if alpha is not None else self.alpha
+        power = power if power is not None else self.power
 
         treatment_rate = baseline_rate + min_detectable_effect
         effect_size = self._cohens_h(baseline_rate, treatment_rate)
@@ -35,8 +35,8 @@ class PowerAnalysis:
         power: Optional[float] = None,
     ) -> int:
         """Calculate required sample size per variant for a means test."""
-        alpha = alpha or self.alpha
-        power = power or self.power
+        alpha = alpha if alpha is not None else self.alpha
+        power = power if power is not None else self.power
 
         effect_size = min_detectable_effect / std
         return self._sample_size_from_effect(effect_size, alpha, power)
@@ -48,7 +48,7 @@ class PowerAnalysis:
         alpha: Optional[float] = None,
     ) -> float:
         """Calculate statistical power for a given sample size and effect size."""
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         z_alpha = stats.norm.ppf(1 - alpha / (2 if self.two_tailed else 1))
         z = effect_size * np.sqrt(n / 2) - z_alpha
         return float(stats.norm.cdf(z))
@@ -61,8 +61,8 @@ class PowerAnalysis:
         power: Optional[float] = None,
     ) -> float:
         """Calculate MDE given a fixed sample size."""
-        alpha = alpha or self.alpha
-        power = power or self.power
+        alpha = alpha if alpha is not None else self.alpha
+        power = power if power is not None else self.power
 
         z_alpha = stats.norm.ppf(1 - alpha / (2 if self.two_tailed else 1))
         z_beta = stats.norm.ppf(power)
@@ -75,7 +75,7 @@ class PowerAnalysis:
         alpha: Optional[float] = None,
     ) -> np.ndarray:
         """Return power values across a range of effect sizes for a fixed n."""
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         return np.array([self.achieved_power(n, es, alpha) for es in effect_sizes])
 
     def sample_size_curve(
@@ -85,8 +85,8 @@ class PowerAnalysis:
         power: Optional[float] = None,
     ) -> np.ndarray:
         """Return required sample sizes across a range of effect sizes."""
-        alpha = alpha or self.alpha
-        power = power or self.power
+        alpha = alpha if alpha is not None else self.alpha
+        power = power if power is not None else self.power
         return np.array([self._sample_size_from_effect(es, alpha, power) for es in effect_sizes])
 
     def _cohens_h(self, p1: float, p2: float) -> float:

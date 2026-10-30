@@ -16,6 +16,7 @@ class SequentialTestState:
     n_treatment: int
     should_stop: bool
     reject_null: bool
+    t_statistic: Optional[float] = None
 
 
 @dataclass
@@ -34,6 +35,7 @@ class SequentialTestResult:
                 "alpha_boundary": s.alpha_boundary,
                 "p_value": s.p_value,
                 "z_stat": s.z_statistic,
+                "t_stat": s.t_statistic if s.t_statistic is not None else s.z_statistic,
                 "n_control": s.n_control,
                 "n_treatment": s.n_treatment,
                 "stop": s.should_stop,
@@ -67,8 +69,8 @@ class SequentialTester:
     def alpha_spending(self, information_fraction: float) -> float:
         """
         Cumulative alpha spent by information fraction t ∈ (0, 1].
-        O'Brien-Fleming: spends little early, more near end.
-        Pocock: spends uniformly.
+        O'Brien-Fleming (Lan-DeMets): spends little early, more near end.
+        Pocock: spends uniformly over log-information.
         """
         t = np.clip(information_fraction, 1e-10, 1.0)
         if self.spending_function == "obrien_fleming":
@@ -107,15 +109,20 @@ class SequentialTester:
 
         z_boundary = self.boundary_at_look(look_index, information_fraction)
 
-        stat, p = stats.ttest_ind(control, treatment, equal_var=False)
-        z_stat = float(stat)
+        mean_c, mean_t = float(np.mean(control)), float(np.mean(treatment))
+        var_c = float(np.var(control, ddof=1)) if n_c > 1 else 0.0
+        var_t = float(np.var(treatment, ddof=1)) if n_t > 1 else 0.0
+        se = float(np.sqrt(var_c / n_c + var_t / n_t)) if (n_c > 0 and n_t > 0) else 0.0
+        z_stat = float((mean_t - mean_c) / se) if se > 0 else 0.0
+
+        t_stat, p = stats.ttest_ind(treatment, control, equal_var=False)
 
         cumulative_spend = self.alpha_spending(information_fraction)
         incremental_spend = max(cumulative_spend - self._alpha_spent_so_far, 1e-10)
-        reject = abs(z_stat) >= z_boundary
+        reject = bool(abs(z_stat) >= z_boundary)
 
-        if reject:
-            self._alpha_spent_so_far = cumulative_spend
+        # Alpha spent must be updated after every look to prevent alpha leak
+        self._alpha_spent_so_far = cumulative_spend
 
         return SequentialTestState(
             look_number=look_index + 1,
@@ -124,6 +131,7 @@ class SequentialTester:
             alpha_boundary=z_boundary,
             p_value=float(p),
             z_statistic=z_stat,
+            t_statistic=float(t_stat),
             n_control=n_c,
             n_treatment=n_t,
             should_stop=reject,
@@ -155,7 +163,7 @@ class SequentialTester:
 
             state = self.evaluate_look(c_slice, t_slice, i, frac)
             result.looks.append(state)
-            result.total_alpha_spent += state.alpha_spent
+            result.total_alpha_spent = self._alpha_spent_so_far
 
             if state.should_stop:
                 result.final_decision = "reject_null"

@@ -67,3 +67,24 @@ def test_to_dict_keys(engine, null_data):
     ctrl, trt = null_data
     d = engine.t_test(ctrl, trt).to_dict()
     assert all(k in d for k in ["test", "p_value", "effect_size", "ci_lower", "ci_upper", "significant"])
+
+
+def test_one_tailed_treatment_greater_significant(effect_data):
+    ctrl, trt = effect_data
+    engine_one_tailed = StatisticalTestEngine(alpha=0.05, two_tailed=False)
+    result = engine_one_tailed.t_test(ctrl, trt)
+    assert result.significant
+    assert result.statistic > 0
+    assert result.p_value < 0.05
+    assert result.confidence_interval[1] == float("inf")
+    assert result.confidence_interval[0] > 0
+
+    # If treatment is worse, one-tailed test in 'greater' direction should not reject
+    result_reversed = engine_one_tailed.t_test(trt, ctrl)
+    assert not result_reversed.significant
+    assert result_reversed.p_value > 0.50
+
+    mw_result = engine_one_tailed.mann_whitney(ctrl, trt)
+    assert mw_result.significant
+    assert mw_result.p_value < 0.05
+    assert mw_result.confidence_interval[1] == float("inf")

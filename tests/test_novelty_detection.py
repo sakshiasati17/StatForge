@@ -62,3 +62,12 @@ def test_recommendation_is_string(detector, novelty_data):
     result = detector.detect(ctrl, trt)
     assert isinstance(result.recommendation, str)
     assert len(result.recommendation) > 0
+
+
+def test_stabilization_day_calculated_correctly(detector, novelty_data):
+    ctrl, trt = novelty_data
+    result = detector.detect(ctrl, trt)
+    assert result.stabilization_day is not None
+    # empirical linear regression slope ~ -0.011, intercept ~ 0.165 => day ~ 14
+    assert 10 <= result.stabilization_day <= 16
+    assert "Estimated 1% threshold crossing" in result.recommendation

@@ -48,18 +48,39 @@ class StatisticalTestEngine:
         equal_var: bool = False,
     ) -> TestResult:
         """Welch's t-test for comparing means between two groups."""
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         alternative = "two-sided" if self.two_tailed else "greater"
 
-        stat, p = stats.ttest_ind(control, treatment, equal_var=equal_var, alternative=alternative)
+        # Compare treatment vs control so positive statistic corresponds to treatment > control
+        stat, p = stats.ttest_ind(treatment, control, equal_var=equal_var, alternative=alternative)
 
         mean_diff = float(np.mean(treatment) - np.mean(control))
-        pooled_std = float(np.sqrt((np.std(control) ** 2 + np.std(treatment) ** 2) / 2))
+        n_c, n_t = len(control), len(treatment)
+        var_c = float(np.var(control, ddof=1)) if n_c > 1 else 0.0
+        var_t = float(np.var(treatment, ddof=1)) if n_t > 1 else 0.0
+
+        pooled_std = float(np.sqrt((var_c + var_t) / 2))
         effect_size = mean_diff / pooled_std if pooled_std > 0 else 0.0
 
-        se = float(np.sqrt(np.var(control) / len(control) + np.var(treatment) / len(treatment)))
-        t_crit = stats.t.ppf(1 - alpha / 2, df=len(control) + len(treatment) - 2)
-        ci = (mean_diff - t_crit * se, mean_diff + t_crit * se)
+        if equal_var:
+            df = float(n_c + n_t - 2)
+            s_pooled = ((n_c - 1) * var_c + (n_t - 1) * var_t) / df if df > 0 else 1.0
+            se = float(np.sqrt(s_pooled * (1 / n_c + 1 / n_t)))
+        else:
+            # Welch-Satterthwaite degrees of freedom
+            v_c = var_c / n_c if n_c > 0 else 0.0
+            v_t = var_t / n_t if n_t > 0 else 0.0
+            se = float(np.sqrt(v_c + v_t))
+            num = (v_c + v_t) ** 2
+            denom = ((v_c ** 2) / (n_c - 1) + (v_t ** 2) / (n_t - 1)) if (n_c > 1 and n_t > 1) else 1.0
+            df = float(num / denom) if denom > 0 else 1.0
+
+        if self.two_tailed:
+            t_crit = float(stats.t.ppf(1 - alpha / 2, df=df))
+            ci = (mean_diff - t_crit * se, mean_diff + t_crit * se)
+        else:
+            t_crit = float(stats.t.ppf(1 - alpha, df=df))
+            ci = (mean_diff - t_crit * se, float("inf"))
 
         return TestResult(
             test_name="Welch's t-test",
@@ -67,8 +88,8 @@ class StatisticalTestEngine:
             p_value=float(p),
             effect_size=effect_size,
             confidence_interval=ci,
-            sample_size_control=len(control),
-            sample_size_treatment=len(treatment),
+            sample_size_control=n_c,
+            sample_size_treatment=n_t,
             significant=float(p) < alpha,
             alpha=alpha,
         )
@@ -80,15 +101,15 @@ class StatisticalTestEngine:
         alpha: Optional[float] = None,
     ) -> TestResult:
         """Non-parametric Mann-Whitney U test for comparing distributions."""
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
         alternative = "two-sided" if self.two_tailed else "greater"
 
-        stat, p = stats.mannwhitneyu(control, treatment, alternative=alternative)
+        # Compare treatment vs control so alternative="greater" tests treatment > control
+        stat, p = stats.mannwhitneyu(treatment, control, alternative=alternative)
 
         n_c, n_t = len(control), len(treatment)
-        r = 1 - (2 * float(stat)) / (n_c * n_t)
+        r = 1 - (2 * float(stat)) / (n_c * n_t) if (n_c > 0 and n_t > 0) else 0.0
 
-        median_diff = float(np.median(treatment) - np.median(control))
         ci = self._bootstrap_ci(control, treatment, np.median, alpha)
 
         return TestResult(
@@ -112,7 +133,7 @@ class StatisticalTestEngine:
         alpha: Optional[float] = None,
     ) -> TestResult:
         """Chi-square test for comparing conversion rates."""
-        alpha = alpha or self.alpha
+        alpha = alpha if alpha is not None else self.alpha
 
         observed = np.array([
             [conversions_control, n_control - conversions_control],
@@ -153,8 +174,12 @@ class StatisticalTestEngine:
             c_boot = rng.choice(control, size=len(control), replace=True)
             t_boot = rng.choice(treatment, size=len(treatment), replace=True)
             diffs.append(stat_fn(t_boot) - stat_fn(c_boot))
-        lo, hi = np.percentile(diffs, [100 * alpha / 2, 100 * (1 - alpha / 2)])
-        return float(lo), float(hi)
+        if self.two_tailed:
+            lo, hi = np.percentile(diffs, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+            return float(lo), float(hi)
+        else:
+            lo = np.percentile(diffs, 100 * alpha)
+            return float(lo), float("inf")
 
     def _proportion_ci(
         self,
@@ -166,5 +191,9 @@ class StatisticalTestEngine:
     ) -> tuple:
         diff = rate_t - rate_c
         se = np.sqrt(rate_c * (1 - rate_c) / n_c + rate_t * (1 - rate_t) / n_t)
-        z = stats.norm.ppf(1 - alpha / 2)
-        return float(diff - z * se), float(diff + z * se)
+        if self.two_tailed:
+            z = stats.norm.ppf(1 - alpha / 2)
+            return float(diff - z * se), float(diff + z * se)
+        else:
+            z = stats.norm.ppf(1 - alpha)
+            return float(diff - z * se), float("inf")

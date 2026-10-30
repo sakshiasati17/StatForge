@@ -488,7 +488,7 @@ with tab5:
 
         corrector = MultipleTestingCorrection(alpha=mt_alpha)
         comparison_df = corrector.compare_methods(raw_p_values, metric_names, mt_alpha)
-        st.dataframe(comparison_df.style.applymap(
+        st.dataframe(comparison_df.style.map(
             lambda v: "background-color: #1a3d1a" if v is True else
                       ("background-color: #3d1a1a" if v is False else ""),
             subset=["bonferroni_rejected", "bh_rejected"]

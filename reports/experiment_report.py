@@ -5,11 +5,15 @@ including power analysis, test results, CUPED output, and SRM check.
 """
 from __future__ import annotations
 
+import html
 import json
+import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import plotly.graph_objects as go
@@ -141,11 +145,14 @@ def generate_report(exp: ExperimentInput, output_path: str = "reports/report.htm
         "Achieved Power": f"{achieved_power:.1%}",
     }
 
-    html = f"""<!DOCTYPE html>
+    safe_name = html.escape(exp.name)
+    safe_description = html.escape(exp.description) if exp.description else ""
+
+    html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Experiment Report: {exp.name}</title>
+<title>Experiment Report: {safe_name}</title>
 <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -167,8 +174,8 @@ def generate_report(exp: ExperimentInput, output_path: str = "reports/report.htm
 </head>
 <body>
 <h1>Experiment Report</h1>
-<p class="meta">Experiment: <strong>{exp.name}</strong> &nbsp;|&nbsp; Generated: {timestamp}</p>
-{f'<p class="meta">{exp.description}</p>' if exp.description else ""}
+<p class="meta">Experiment: <strong>{safe_name}</strong> &nbsp;|&nbsp; Generated: {timestamp}</p>
+{f'<p class="meta">{safe_description}</p>' if safe_description else ""}
 
 <section>
   <h2>Result &nbsp; <span class="badge">{status_text}</span>
@@ -203,7 +210,7 @@ def generate_report(exp: ExperimentInput, output_path: str = "reports/report.htm
 </html>"""
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(output_path).write_text(html, encoding="utf-8")
+    Path(output_path).write_text(html_content, encoding="utf-8")
     return output_path
 
 
